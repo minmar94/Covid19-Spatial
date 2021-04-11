@@ -1,2 +1,2 @@
 # Covid19-Spatial
-Spatial and spatio-temporal modeling of the Italian epidemic of COVID-19
+Spatio-temporal modeling of COVID-19 epidemic in Italy at the regional level.
