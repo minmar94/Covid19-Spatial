@@ -63,7 +63,7 @@ dat1 <- list(
 
 # Chains
 n_chains <- 2
-M <- 15000
+M <- 5000
 n_cores <- mc.cores - 2
 
 # Define a function to generate initial values
@@ -85,6 +85,6 @@ fit_Stan1 <- sampling(stan_Multip1, data = dat1, chains = n_chains, iter = M,
                       control = list(adapt_delta = 0.9, max_treedepth = 15)
 )
 
-c(postsamples_Stan1, ypreds_Stan1, ypredsQ_Stan1) %<-% extract_postY(fit_Stan1)
+c(postsamples_Stan1, ypreds_Stan1, ypredsQ_Stan1, ypredsT_Stan1, ypredsTQ_Stan1) %<-% extract_postY(fit_Stan1)
 
 save.image()
