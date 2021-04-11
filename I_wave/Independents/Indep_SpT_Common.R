@@ -14,9 +14,6 @@ source("OtherFuns/StanFuns.R")
 # Reading Data ------------------------------------------------------------
 
 load("Data/DatiStanIIwave.RData")
-dati <- datasave
-dati$denominazione_regione <- factor(dati$denominazione_regione)
-rm(datasave)
 
 # Stan model compilation --------------------------------------------------
 
