@@ -13,7 +13,7 @@ source("OtherFuns/StanFuns.R")
 
 # Reading Data ------------------------------------------------------------
 
-load("Data/DatiStanIIwave.RData")
+load("Data/DatiStan2Wave.RData")
 
 # Stan model compilation --------------------------------------------------
 
@@ -47,9 +47,9 @@ regIdxTe <- as.integer(datiTe$denominazione_regione)
 t <- sort(unique(datiTr$WW-min(datiTr$WW))) + 1
 Ntimes <- as.integer(length(t))
 
-trScaled <- datiTr %>% dplyr::select(NewSwabsSett) %>% scale()
-teScaled <- datiTe %>% dplyr::select(NewSwabsSett) %>% scale(center = attr(trScaled, "scaled:center"),
-                                                      	     scale = attr(trScaled, "scaled:scale"))
+trScaled <- datiTr %>% dplyr::select(Swabs) %>% scale()
+teScaled <- datiTe %>% dplyr::select(Swabs) %>% scale(center = attr(trScaled, "scaled:center"),
+                                                      scale = attr(trScaled, "scaled:scale"))
 
 X1 <- model.matrix(~.-1, data=as_tibble(trScaled))
 X1Te <- model.matrix(~.-1, data=as_tibble(teScaled))
@@ -81,10 +81,9 @@ dat1 <- list(
 
 
 # Stan Settings -----------------------------------------------------------
-
 # Chains
 n_chains <- 2
-M <- 15000
+M <- 5000
 n_cores <- mc.cores - 2
 
 # Define a function to generate initial values
