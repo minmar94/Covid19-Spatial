@@ -25,7 +25,7 @@ mc.cores = parallel::detectCores()
 # Stan options
 rstan_options(auto_write = TRUE)
 
-stan_Multip1 <- stan_model("CovStCARSp_MultipAll_Shared_Val.stan")
+stan_Multip1 <- stan_model("CovStCARSp_MultipAll_Common_Val.stan")
 
 # Split -------------------------------------------------------------------
 set.seed(130494)
@@ -53,7 +53,7 @@ Ntimes <- as.integer(length(t))
 
 trScaled <- datiTr %>% dplyr::select(NewSwabsSett) %>% scale()
 teScaled <- datiTe %>% dplyr::select(NewSwabsSett) %>% scale(center = attr(trScaled, "scaled:center"),
-                                                      scale = attr(trScaled, "scaled:scale"))
+                                                             scale = attr(trScaled, "scaled:scale"))
 
 X1 <- model.matrix(~.-1, data=as_tibble(trScaled))
 X1Te <- model.matrix(~.-1, data=as_tibble(teScaled))
@@ -112,4 +112,4 @@ fit_Stan1 <- sampling(stan_Multip1, data = dat1, chains = n_chains, iter = M,
 )
 c(postsamples_Stan1, ypreds_Stan1, ypredsQ_Stan1, ypredsT_Stan1, ypredsTQ_Stan1) %<-% extract_postY(fit_Stan1)
 
-save.image(file="WS/StCARMultipAll_TrueData_IIwave_Transport_Shared_OOS.RData")
+save.image()
