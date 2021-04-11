@@ -14,11 +14,7 @@ set.seed(130494)
 
 # Reading Data ------------------------------------------------------------
 
-load("Data/DatiStanIIwave.RData")
-load("Data/AdjMat.RData")
-dati <- datasave %>% filter(!(denominazione_regione %in% c("Molise", "Valle d'Aosta")))
-dati$denominazione_regione <- factor(dati$denominazione_regione)
-rm(datasave)
+load("Data/DatiStan182Wave.RData")
 
 # Stan model compilation --------------------------------------------------
 
@@ -38,9 +34,9 @@ regIdx <- as.integer(droplevels(dati$denominazione_regione))
 t <- unique(dati$WW-min(dati$WW))+1
 Ntimes <- as.integer(length(t))
 
-X1 <- model.matrix(~.-1, data=scale(dati %>% dplyr::select(NewSwabsSett)) %>% as.data.frame)
+X1 <- model.matrix(~.-1, data=scale(dati %>% dplyr::select(Swabs)) %>% as.data.frame)
 k1 <- ncol(X1)
-lOff1 <- log(dati$totale/10000)
+lOff1 <- rep(logE, each = Ntimes)
 
 ySums <-  dati %>% group_by(denominazione_regione) %>% summarise(y=sum(NP)) %$% y
 yMins <-  dati %>% group_by(denominazione_regione) %>% summarise(y=min(NP)) %$% y
