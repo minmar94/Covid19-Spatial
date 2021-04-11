@@ -14,10 +14,7 @@ set.seed(130494)
 
 # Reading Data ------------------------------------------------------------
 
-load("Data/DatiStanIIwave.RData")
-dati <- datasave
-dati$denominazione_regione <- factor(dati$denominazione_regione)
-rm(datasave)
+load("Data/DatiStan2Wave.RData")
 
 # Stan model compilation --------------------------------------------------
 
@@ -37,7 +34,7 @@ regIdx <- as.integer(droplevels(dati$denominazione_regione))
 t <- unique(dati$WW-min(dati$WW)) + 1
 Ntimes <- as.integer(length(t))
 
-X1 <- model.matrix(~.-1, data=scale(dati %>% dplyr::select(NewSwabsSett)) %>% as.data.frame)
+X1 <- model.matrix(~.-1, data=scale(dati %>% dplyr::select(Swabs)) %>% as.data.frame)
 k1 <- ncol(X1)
 lOff1 <- log(dati$totale/10000)
 
@@ -63,7 +60,7 @@ dat1 <- list(
 
 # Chains
 n_chains <- 2
-M <- 5000
+M <- 15000
 n_cores <- mc.cores - 2
 
 # Define a function to generate initial values
@@ -85,6 +82,6 @@ fit_Stan1 <- sampling(stan_Multip1, data = dat1, chains = n_chains, iter = M,
                       control = list(adapt_delta = 0.9, max_treedepth = 15)
 )
 
-c(postsamples_Stan1, ypreds_Stan1, ypredsQ_Stan1, ypredsT_Stan1, ypredsTQ_Stan1) %<-% extract_postY(fit_Stan1)
+c(postsamples_Stan1, ypreds_Stan1, ypredsQ_Stan1) %<-% extract_postY(fit_Stan1)
 
 save.image()
