@@ -26,7 +26,7 @@ mc.cores = parallel::detectCores()
 # Stan options
 rstan_options(auto_write = TRUE)
 
-stan_Multip1 <- stan_model("CovStCARSp_MultipAll_Shared.stan")
+stan_Multip1 <- stan_model("CovStCARSp_MultipAll_Common.stan")
 
 # Data preparation for New Positives--------------------------------------------------------
 
@@ -66,7 +66,7 @@ dat1 <- list(
 # Chains
 n_chains <- 2
 M <- 15000
-n_cores <- (mc.cores)
+n_cores <- mc.cores - 2
 
 # Define a function to generate initial values
 
@@ -88,4 +88,4 @@ fit_Stan1 <- sampling(stan_Multip1, data = dat1, chains = n_chains, iter = M,
 )
 c(postsamples_Stan1, ypreds_Stan1, ypredsQ_Stan1) %<-% extract_postY(fit_Stan1)
 
-save.image(file="WS/StCARMultipAll_TrueData_IIwave_Transport_Shared.RData")
+save.image()
