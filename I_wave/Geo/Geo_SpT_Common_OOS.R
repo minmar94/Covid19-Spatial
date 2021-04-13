@@ -7,36 +7,34 @@ require(magrittr)
 require(lubridate)
 require(zeallot)
 require(parallel)
-source("OtherFuns/DrichFuns.R")
-source("OtherFuns/DataFuns.R")
-source("OtherFuns/StanFuns.R")
 
 # Reading Data ------------------------------------------------------------
 
-load("Data/DatiStanIIwave.RData")
-dati <- datasave %>% filter(denominazione_regione != "Sardegna")
-dati$denominazione_regione <- factor(dati$denominazione_regione)
-rm(datasave)
-adj <- read_csv("Data/AdjMatrixSpatRegions.csv")[,-1] %>% as.matrix
-adj <- adj[-14, ]
-adj <- adj[,-14]
+load("Data/data_I_wave_Geo.RData")
+
+dati <- dati19
+rm(dati19)
+adj <- adjGeo
+rm(adjGeo)
+logE <- logE19
+rm(logE19)
 
 # Stan model compilation --------------------------------------------------
 
-mc.cores = parallel::detectCores()
+mc.cores <- parallel::detectCores()
 # Stan options
 rstan_options(auto_write = TRUE)
 
-stan_Multip1 <- stan_model("CovStCARSp_MultipAll_Shared_Val.stan")
+stan_Multip1 <- stan_model("Geo_SpT_Common_OOS.stan")
 
 # Split -------------------------------------------------------------------
 set.seed(130494)
 dati %<>% group_by(denominazione_regione) %>% 
-	mutate(
-	Train=sample(c(rep(1, round(0.85*n())), rep(0, round(0.15*n()))))
-	) %>% 
-	ungroup %>%
-	mutate(denominazione_regione = droplevels(factor(denominazione_regione)))
+  mutate(
+    Train=sample(c(rep(1, round(0.85*n())), rep(0, round(0.15*n()))))
+  ) %>% 
+  ungroup %>%
+  mutate(denominazione_regione = droplevels(factor(denominazione_regione)))
 datiTr <- dati %>% filter(Train==1)
 datiTe <- dati %>% filter(Train==0)
 
@@ -46,26 +44,26 @@ Y <- as.integer(datiTr$NP)
 N <- as.integer(length(Y))
 NTe <- nrow(datiTe)
 Nreg <- as.integer(length(unique(datiTr$denominazione_regione)))
-timeIdx <- as.integer(datiTr$WW-min(datiTr$WW))+1
+timeIdx <- as.integer(datiTr$WW) + 1
 regIdx <- as.integer(datiTr$denominazione_regione)
-timeIdxTe <- as.integer(datiTe$WW-min(datiTe$WW))+1
+timeIdxTe <- as.integer(datiTe$WW) + 1
 regIdxTe <- as.integer(datiTe$denominazione_regione)
-t <- sort(unique(datiTr$WW-min(datiTr$WW))) + 1
+t <- sort(unique(datiTr$WW)) + 1
 Ntimes <- as.integer(length(t))
 
-trScaled <- datiTr %>% dplyr::select(NewSwabsSett) %>% scale()
-teScaled <- datiTe %>% dplyr::select(NewSwabsSett) %>% scale(center = attr(trScaled, "scaled:center"),
+trScaled <- datiTr %>% dplyr::select(Swabs) %>% scale()
+teScaled <- datiTe %>% dplyr::select(Swabs) %>% scale(center = attr(trScaled, "scaled:center"),
                                                       scale = attr(trScaled, "scaled:scale"))
 
 X1 <- model.matrix(~.-1, data=as_tibble(trScaled))
 X1Te <- model.matrix(~.-1, data=as_tibble(teScaled))
 k1 <- ncol(X1)
-lOff1 <- log(datiTr$totale/10000)
-lOff1Te <- log(datiTe$totale/10000)
+lOff1 <- rep(logE, each = round(Ntimes*.85))
+lOff1Te <- rep(logE, each = round(Ntimes*.15))
 
 ySums <-  dati %>% group_by(denominazione_regione) %>% summarise(y=sum(NP)) %$% y
 yMins <-  dati %>% group_by(denominazione_regione) %>% summarise(y=min(NP)) %$% y
-tflex <- dati %>% group_by(denominazione_regione) %>% summarise(WW=(WW-min(WW))[which.max(NP)]) %$% WW
+tflex <- dati %>% group_by(denominazione_regione) %>% summarise(WW=WW[which.max(NP)]) %$% WW
 
 # Prepare data
 dat1 <- list(
@@ -92,7 +90,7 @@ dat1 <- list(
 # Chains
 n_chains <- 2
 M <- 5000
-n_cores <- (mc.cores)
+n_cores <- mc.cores - 2
 
 # Define a function to generate initial values
 
@@ -107,11 +105,8 @@ init <- function(chain_id = 1)
     logbase = rnorm(1, log(yMins+0.0000001)-unique(lOff1), 1))
 } 
 
-
+# Fit
 fit_Stan1 <- sampling(stan_Multip1, data = dat1, chains = n_chains, iter = M, 
-                     cores = n_cores, init=init,
-                     control = list(adapt_delta = 0.9, max_treedepth = 15)
+                      cores = n_cores, init=init,
+                      control = list(adapt_delta = 0.9, max_treedepth = 15)
 )
-c(postsamples_Stan1, ypreds_Stan1, ypredsQ_Stan1, ypredsT_Stan1, ypredsTQ_Stan1) %<-% extract_postY(fit_Stan1)
-
-save.image(file="WS/StCARMultipAll_TrueData_IIwave_Geo_Shared_OOS.RData")
